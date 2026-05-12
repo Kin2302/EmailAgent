@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="EmailAgent.Console/EmailAgent.Console.csproj" />
+  <Project Path="EmailAgent.Core/EmailAgent.Core.csproj" />
+</Solution>
