@@ -1,5 +1,6 @@
 using EmailAgent.Core.Agents;
 using EmailAgent.Core.Filters;
+using EmailAgent.Core.Plugins;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -57,7 +58,7 @@ namespace EmailAgent.Core.Orchestrator
             _kernel.Plugins.AddFromObject(new DataPlugin(), "DataPlugin");
             _kernel.Plugins.AddFromObject(new AnalystPlugin(), "AnalystPlugin");
             _kernel.Plugins.AddFromObject(new WriterPlugin(), "WriterPlugin");
-            _kernel.Plugins.AddFromObject(SenderPlugin, "SenderPlugin");
+            _kernel.Plugins.AddFromObject(new ReviewPlugin(SenderPlugin), "ReviewPlugin");
             _kernel.Plugins.AddFromObject(new ReminderPlugin(), "ReminderPlugin");
 
             // SK Filter — log realtime từng Plugin AI gọi
@@ -70,11 +71,11 @@ namespace EmailAgent.Core.Orchestrator
                     Bạn là trợ lý AI thông minh hỗ trợ công việc văn phòng, trả lời bằng tiếng Việt.
 
                     NHÓM 1 — BÁO CÁO DOANH THU:
-                    Khi user muốn gửi báo cáo, phân tích doanh thu:
-                    - Bước 1: GetSalesData (hỏi đường dẫn CSV nếu chưa có)
+                    - Bước 1: GetSalesData
                     - Bước 2: AnalyzeSalesData
                     - Bước 3: WriteEmailContent
-                    - Bước 4: Hiển thị email, đợi user xác nhận rồi mới gọi SendEmail
+                    - Bước 4: ReviewAndSend (truyền subject, body, email người nhận)
+                    TUYỆT ĐỐI không bỏ qua bước 4 — ReviewAndSend sẽ tự xử lý việc gửi.
 
                     NHÓM 2 — NHẮC VIỆC / LỊCH HẸN:
                     - Thêm việc  → AddReminder (cần: title, time HH:mm, email nhận nhắc)
@@ -82,12 +83,12 @@ namespace EmailAgent.Core.Orchestrator
                     - Xong việc  → CompleteReminder
                     - Xóa việc   → DeleteReminder
 
-                    NGUYÊN TẮC:
+                    NGUYÊN TẮC BẮT BUỘC:
                     - Tự hiểu ý định từ ngôn ngữ tự nhiên tiếng Việt
-                    - Nếu thiếu thông tin quan trọng thì hỏi ngắn gọn 1 lần
-                    - Luôn thân thiện, súc tích
-                    - Sau khi xong tác vụ, hỏi user cần gì thêm không
-                    - QUAN TRỌNG: Khi Plugin trả về danh sách hoặc kết quả dữ liệu, hãy copy NGUYÊN VĂN toàn bộ nội dung đó vào response, không tóm tắt, không diễn giải lại, không bỏ bớt dòng nào
+                    - Nếu thiếu thông tin thì hỏi ngắn gọn 1 lần
+                    - LUÔN LUÔN in TOÀN BỘ nội dung Plugin trả về, KHÔNG được tóm tắt,
+                      KHÔNG được bỏ bớt dòng nào, KHÔNG được viết lại bằng lời khác
+                    - Sau khi in xong kết quả Plugin, mới hỏi user cần gì thêm
                     """,
                 Kernel = _kernel,
                 Arguments = new KernelArguments(
@@ -107,20 +108,25 @@ namespace EmailAgent.Core.Orchestrator
             if (_agent == null)
                 throw new InvalidOperationException("Gọi Initialize() trước.");
 
+            // 1. Thêm câu hỏi của user vào lịch sử
             _chatHistory.AddUserMessage(userMessage);
 
             var sb = new System.Text.StringBuilder();
+
+            // 2. Duyệt qua TẤT CẢ các phản hồi của AI (bao gồm cả các bước gọi Plugin ẩn)
             await foreach (var response in _agent.InvokeAsync(_chatHistory))
             {
-                if (response.Message?.Content is string content && !string.IsNullOrWhiteSpace(content))
-                    sb.Append(content);
+
+                _chatHistory.Add(response);
+
+                if (!string.IsNullOrWhiteSpace(response.Message?.Content))
+                {
+                    sb.Append(response.Message?.Content);
+                }
             }
 
-            var result = sb.ToString().Trim();
-            if (!string.IsNullOrEmpty(result))
-                _chatHistory.AddAssistantMessage(result);
 
-            return result;
+            return sb.ToString().Trim();
         }
 
         /// <summary>
