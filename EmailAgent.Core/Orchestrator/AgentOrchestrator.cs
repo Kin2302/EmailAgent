@@ -68,27 +68,21 @@ namespace EmailAgent.Core.Orchestrator
             {
                 Name = "WorkflowAssistant",
                 Instructions = """
-                    Bạn là trợ lý AI thông minh hỗ trợ công việc văn phòng, trả lời bằng tiếng Việt.
+                    Bạn là trợ lý AI văn phòng, trả lời tiếng Việt.
 
-                    NHÓM 1 — BÁO CÁO DOANH THU:
-                    - Bước 1: GetSalesData
-                    - Bước 2: AnalyzeSalesData
-                    - Bước 3: WriteEmailContent
-                    - Bước 4: ReviewAndSend (truyền subject, body, email người nhận)
-                    TUYỆT ĐỐI không bỏ qua bước 4 — ReviewAndSend sẽ tự xử lý việc gửi.
+                    BÁO CÁO DOANH THU (4 bước tuần tự):
+                    1. Lấy dữ liệu: .csv→GetSalesData, .xlsx→GetDataFromExcel, URL→GetDataFromApi
+                    2. AnalyzeSalesData(csvContent)
+                    3. WriteEmailContent(analysisSummary, recipientTitle)
+                    4. ReviewAndSend(subject, emailId, recipientEmail) — emailId lấy từ kết quả bước 3
 
-                    NHÓM 2 — NHẮC VIỆC / LỊCH HẸN:
-                    - Thêm việc  → AddReminder (cần: title, time HH:mm, email nhận nhắc)
-                    - Xem việc   → ListReminders
-                    - Xong việc  → CompleteReminder
-                    - Xóa việc   → DeleteReminder
+                    NHẮC VIỆC: AddReminder, ListReminders, CompleteReminder, DeleteReminder
 
-                    NGUYÊN TẮC BẮT BUỘC:
-                    - Tự hiểu ý định từ ngôn ngữ tự nhiên tiếng Việt
-                    - Nếu thiếu thông tin thì hỏi ngắn gọn 1 lần
-                    - LUÔN LUÔN in TOÀN BỘ nội dung Plugin trả về, KHÔNG được tóm tắt,
-                      KHÔNG được bỏ bớt dòng nào, KHÔNG được viết lại bằng lời khác
-                    - Sau khi in xong kết quả Plugin, mới hỏi user cần gì thêm
+                    NGUYÊN TẮC:
+                    - Gọi TỪNG hàm một, chờ kết quả rồi mới gọi tiếp
+                    - In TOÀN BỘ output Plugin, không tóm tắt
+                    - Thiếu thông tin → hỏi ngắn 1 lần
+                    - KHÔNG truyền JSON schema vào tham số hàm
                     """,
                 Kernel = _kernel,
                 Arguments = new KernelArguments(
@@ -116,7 +110,6 @@ namespace EmailAgent.Core.Orchestrator
             // 2. Duyệt qua TẤT CẢ các phản hồi của AI (bao gồm cả các bước gọi Plugin ẩn)
             await foreach (var response in _agent.InvokeAsync(_chatHistory))
             {
-
                 _chatHistory.Add(response);
 
                 if (!string.IsNullOrWhiteSpace(response.Message?.Content))
@@ -124,7 +117,6 @@ namespace EmailAgent.Core.Orchestrator
                     sb.Append(response.Message?.Content);
                 }
             }
-
 
             return sb.ToString().Trim();
         }

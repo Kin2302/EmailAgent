@@ -1,4 +1,4 @@
-﻿using EmailAgent.Core.Orchestrator;
+using EmailAgent.Core.Orchestrator;
 using EmailAgent.Core.Services;
 using Microsoft.Extensions.Configuration;
 
@@ -27,14 +27,13 @@ reminderService.Start();
 Console.Clear();
 Console.ForegroundColor = ConsoleColor.Cyan;
 Console.WriteLine("╔══════════════════════════════════════════════════════╗");
-Console.WriteLine("║      🤖 AI AGENT - TRỢ LÝ CÔNG VIỆC THÔNG MINH     ║");
+Console.WriteLine("║      🤖 AI AGENT - TRỢ LÝ CÔNG VIỆC THÔNG MINH       ║");
 Console.WriteLine("║          Powered by Semantic Kernel + Groq           ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════╣");
-Console.WriteLine("║  Gợi ý:                                              ║");
-Console.WriteLine("║  • gửi báo cáo doanh thu D:\\data.csv cho a@b.com   ║");
-Console.WriteLine("║  • nhắc tôi họp lúc 15:00 qua email abc@gmail.com   ║");
-Console.WriteLine("║  • danh sách việc cần làm                            ║");
-Console.WriteLine("║  • xong việc số 1                                    ║");
+Console.WriteLine("║  📊 Báo cáo doanh thu (CSV, Excel, API)              ║");
+Console.WriteLine("║  • gửi báo cáo D:\\data.csv cho a@b.com              ║");
+Console.WriteLine("║  • phân tích file D:\\report.xlsx gửi cho a@b.com    ║");
+Console.WriteLine("║  ⏰ Nhắc việc / 📧 Email HTML (bảng, biểu đồ SVG)   ║");
 Console.WriteLine("║  • exit để thoát                                     ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════╝");
 Console.ResetColor();
@@ -66,8 +65,6 @@ while (true)
         Console.WriteLine("🤖 Đang xử lý...");
         Console.ResetColor();
 
-        // ReviewPlugin tự xử lý toàn bộ review + gửi bên trong SK
-        // Program.cs chỉ hiển thị response cuối của AI
         var response = await orchestrator.ChatAsync(input);
 
         Console.ForegroundColor = ConsoleColor.Green;
