@@ -1,4 +1,4 @@
-﻿using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel;
 using System.ComponentModel;
 using System.Net;
 using System.Net.Mail;
@@ -21,11 +21,12 @@ namespace EmailAgent.Core.Agents
         }
 
         [KernelFunction("SendEmail")]
-        [Description("Gửi email thực tế qua hệ thống SMTP. Hãy gọi hàm này ở bước cuối cùng sau khi đã soạn xong nội dung email.")]
+        [Description("Gửi email qua SMTP. Hỗ trợ HTML và plain text.")]
         public async Task SendEmailAsync(
-            [Description("Tiêu đề của email (Subject)")] string subject,
-            [Description("Nội dung chi tiết của email (Body)")] string body,
-            [Description("Địa chỉ email của người nhận")] string recipientEmail)
+            [Description("Tiêu đề email")] string subject,
+            [Description("Nội dung email")] string body,
+            [Description("Email người nhận")] string recipientEmail,
+            [Description("true = HTML, false = plain text")] bool isHtml = true)
         {
             using var client = new SmtpClient(_smtpServer, _port)
             {
@@ -33,16 +34,15 @@ namespace EmailAgent.Core.Agents
                 EnableSsl = true
             };
 
-            var mailMessage = new MailMessage
+            var mail = new MailMessage
             {
                 From = new MailAddress(_senderEmail),
                 Subject = subject,
                 Body = body,
-                IsBodyHtml = false
+                IsBodyHtml = isHtml
             };
-            mailMessage.To.Add(recipientEmail);
-
-            await client.SendMailAsync(mailMessage);
+            mail.To.Add(recipientEmail);
+            await client.SendMailAsync(mail);
         }
     }
 }

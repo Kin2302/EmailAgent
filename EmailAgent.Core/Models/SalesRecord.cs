@@ -1,9 +1,5 @@
 namespace EmailAgent.Core.Models
 {
-    /// <summary>
-    /// Model structured cho một dòng dữ liệu doanh thu.
-    /// Dùng chung cho CSV, Excel, API — và để build bảng HTML + chart.
-    /// </summary>
     public class SalesRecord
     {
         public string Date { get; set; } = "";
@@ -12,16 +8,13 @@ namespace EmailAgent.Core.Models
         public decimal Price { get; set; }
         public decimal Revenue { get; set; }
 
-        /// <summary>
-        /// Parse danh sách SalesRecord từ CSV text (header: Date,Product,Quantity,Price,Revenue).
-        /// </summary>
         public static List<SalesRecord> ParseFromCsv(string csvContent)
         {
             var records = new List<SalesRecord>();
             if (string.IsNullOrWhiteSpace(csvContent)) return records;
 
             var lines = csvContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var line in lines.Skip(1)) // skip header
+            foreach (var line in lines.Skip(1))
             {
                 var cols = line.Split(',');
                 if (cols.Length < 5) continue;
@@ -40,7 +33,6 @@ namespace EmailAgent.Core.Models
                     });
                 }
             }
-
             return records;
         }
     }

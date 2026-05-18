@@ -10,9 +10,6 @@ namespace EmailAgent.Core.Services
     {
         private static readonly ConcurrentDictionary<string, StoredContent> _store = new();
 
-        /// <summary>
-        /// Lưu nội dung, trả về ID ngắn.
-        /// </summary>
         public static string Save(string content, string tag = "content")
         {
             var id = $"{tag}_{DateTime.Now:HHmmss}_{Guid.NewGuid().ToString()[..4]}";
@@ -25,31 +22,23 @@ namespace EmailAgent.Core.Services
             return id;
         }
 
-        /// <summary>
-        /// Lấy nội dung theo ID.
-        /// </summary>
         public static string? Get(string id)
         {
             return _store.TryGetValue(id, out var item) ? item.Content : null;
         }
 
         /// <summary>
-        /// Lấy nội dung mới nhất có tag bắt đầu bằng prefix.
-        /// VD: GetLatestByPrefix("csv_raw") → lấy raw CSV data mới nhất.
+        /// Lấy nội dung mới nhất theo tag.
         /// </summary>
-        public static string? GetLatestByPrefix(string prefix)
+        public static string? GetLatestByTag(string tag)
         {
             var latest = _store
-                .Where(kv => kv.Value.Tag == prefix)
+                .Where(kv => kv.Value.Tag == tag)
                 .OrderByDescending(kv => kv.Value.CreatedAt)
                 .FirstOrDefault();
-
             return latest.Value?.Content;
         }
 
-        /// <summary>
-        /// Xóa nội dung theo ID.
-        /// </summary>
         public static void Remove(string id)
         {
             _store.TryRemove(id, out _);
